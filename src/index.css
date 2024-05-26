@@ -396,8 +396,11 @@ body {
 	transition: all 0.3s ease !important;
 }
 .side-nav-toggle.open {
-	left: 350px;
+	left: 320px;
 	transition: all 0.3s ease !important;
+	background: transparent;
+	border: none;
+	color: #000;
 }
 
 .side-nav {
@@ -412,10 +415,28 @@ body {
 	left: -350px;
 	transition: left 0.3s ease;
 	z-index: 999;
+	padding-top: 10px;
 }
 
 .side-nav.visible {
 	left: 0;
+}
+
+.side-nav.visible + .side-nav-toggle {
+	left: 350px;
+}
+
+@media (max-width: 768px) {
+	.side-nav {
+		width: 100%;
+		left: -100%;
+	}
+	.side-nav.visible {
+		left: 0;
+	}
+	.side-nav-toggle.open {
+		left: 94%;
+	}
 }
 
 .search-menu-container {
@@ -461,4 +482,8 @@ body {
 
 .minimized-chat-item:hover {
 	background-color: #f0f2f5;
+}
+.chat-list,
+.chat-bar {
+	overflow: auto;
 }

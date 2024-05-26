@@ -39,7 +39,7 @@ const ChatBox = ({
 	const [isHidden, setIsHidden] = useState(false)
 	const [isNavVisible, setIsNavVisible] = useState(false)
 	const ref = useRef(null)
-	const nodeRef = useRef(null) // Added ref for CSSTransition
+	const nodeRef = useRef(null)
 
 	const ItemTypes = {
 		CHAT_BOX: "chatBox",
@@ -102,7 +102,7 @@ const ChatBox = ({
 
 	return (
 		<CSSTransition
-			nodeRef={nodeRef} // Add nodeRef here
+			nodeRef={nodeRef}
 			in={!isHidden}
 			timeout={500}
 			classNames="chat-window-transition"
@@ -110,8 +110,6 @@ const ChatBox = ({
 			appear
 		>
 			<Col xl="4" lg="6" md="12" className="px-0" ref={nodeRef}>
-				{" "}
-				{/* Add ref here */}
 				<div
 					ref={ref}
 					className={`chat-window ${
@@ -157,7 +155,7 @@ const ChatBox = ({
 						</div>
 					</div>
 					<CSSTransition
-						nodeRef={nodeRef} // Add nodeRef here
+						nodeRef={nodeRef}
 						in={isNavVisible}
 						timeout={300}
 						classNames="nav-slide"
@@ -167,8 +165,6 @@ const ChatBox = ({
 							className="chat-nav d-flex justify-content-center align-items-center"
 							ref={nodeRef}
 						>
-							{" "}
-							{/* Add ref here */}
 							<Button variant="link" className="text-dark">
 								<FontAwesomeIcon icon={faStar} />
 							</Button>
@@ -192,31 +188,35 @@ const ChatBox = ({
 							<Row className="messages-row">
 								<Col>
 									<div className="messages">
-										{/* Replace with actual messages */}
-										{[].map((message, index) => (
-											<div
-												key={index}
-												className={`message ${
-													message.user === "main"
-														? "main-user"
-														: "other-user"
-												}`}
-											>
-												{message.text}
-												<div className="message-info">
-													<span className="timestamp">
-														{message.time}
-													</span>
-													{message.user === "main" &&
-														message.seen && (
-															<FontAwesomeIcon
-																icon={faCheck}
-																className="seen-icon text-white"
-															/>
-														)}
+										{chat?.messages?.map(
+											(message, index) => (
+												<div
+													key={index}
+													className={`message ${
+														message.user === "main"
+															? "main-user"
+															: "other-user"
+													}`}
+												>
+													{message.text}
+													<div className="message-info">
+														<span className="timestamp">
+															{message.time}
+														</span>
+														{message.user ===
+															"main" &&
+															message.seen && (
+																<FontAwesomeIcon
+																	icon={
+																		faCheck
+																	}
+																	className="seen-icon text-white"
+																/>
+															)}
+													</div>
 												</div>
-											</div>
-										))}
+											)
+										)}
 									</div>
 								</Col>
 							</Row>
@@ -274,7 +274,27 @@ const ChatList = () => {
 			online: false,
 			unseenMessages: 0,
 		},
-		// Add more chat items here
+		{
+			name: "Bob",
+			lastMessage: "Let's catch up later.",
+			time: "1:30 PM",
+			online: false,
+			unseenMessages: 0,
+		},
+		{
+			name: "Bob",
+			lastMessage: "Let's catch up later.",
+			time: "1:30 PM",
+			online: false,
+			unseenMessages: 0,
+		},
+		{
+			name: "Bob",
+			lastMessage: "Let's catch up later.",
+			time: "1:30 PM",
+			online: false,
+			unseenMessages: 0,
+		},
 	]
 
 	const openChat = (index, fromMinimizedBar = false) => {
@@ -342,13 +362,15 @@ const ChatList = () => {
 		<DndProvider backend={HTML5Backend}>
 			<div className="chat-app-container">
 				<Button
-					className={`p-0 px-2 side-nav-toggle shadow ${
-						isSideNavVisible ? "open" : ""
+					className={`p-0 px-2 side-nav-toggle ${
+						isSideNavVisible ? "open" : "shadow"
 					}`}
 					onClick={() => setIsSideNavVisible(!isSideNavVisible)}
-					variant="secondary"
+					variant={isSideNavVisible ? "link" : "secondary"}
 				>
-					<FontAwesomeIcon icon={faBars} />
+					<FontAwesomeIcon
+						icon={isSideNavVisible ? faTimes : faBars}
+					/>
 				</Button>
 				<div
 					className={`side-nav ${
@@ -383,7 +405,7 @@ const ChatList = () => {
 						</InputGroup>
 					</div>
 
-					<ListGroup variant="flush">
+					<ListGroup className="chat-list" variant="flush">
 						{chatItems.map((chat, index) => (
 							<ListGroup.Item
 								key={index}

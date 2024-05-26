@@ -439,7 +439,7 @@ const ChatList = () => {
 				</div>
 
 				<div
-					className={`chat-box-container ${
+					className={`chat-box-container pb-5 ${
 						isSideNavVisible ? "with-nav" : "without-nav"
 					}`}
 				>

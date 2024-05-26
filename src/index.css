@@ -474,3 +474,15 @@ body {
 .icon-wrapper.slash .fa-slash {
 	display: block;
 }
+
+.chat-box-wrapper,
+.chat-window {
+	transition: all 0.5s !important;
+}
+
+.chat-box-wrapper.removing {
+	width: 0px;
+}
+.chat-window.removing {
+	height: 0px;
+}

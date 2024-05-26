@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react"
+import React, { useState, useRef, useCallback, useEffect } from "react"
 import {
 	Form,
 	InputGroup,
@@ -45,6 +45,10 @@ const ChatBox = ({
 	closeChat,
 	setHoveredChatIndex,
 	hoveredChatIndex,
+	isMinimized,
+	isClosing,
+	setChatBoxes,
+	chatBoxes,
 }) => {
 	const [isNavVisible, setIsNavVisible] = useState(false)
 	const ref = useRef(null)
@@ -100,11 +104,31 @@ const ChatBox = ({
 
 	drag(drop(ref))
 
+	useEffect(() => {
+		if (isClosing)
+			setTimeout(() => {
+				setChatBoxes(chatBoxes.filter((chat) => chat.index !== index))
+			}, 500)
+		if (isMinimized || isClosing) {
+			const frameId = requestAnimationFrame(() => {
+				ref?.current?.classList?.add("removing")
+				ref?.current?.parentElement?.classList?.add("removing")
+			})
+			return () => cancelAnimationFrame(frameId)
+		} else {
+			const frameId = requestAnimationFrame(() => {
+				ref?.current?.classList?.remove("removing")
+				ref?.current?.parentElement?.classList?.remove("removing")
+			})
+			return () => cancelAnimationFrame(frameId)
+		}
+	}, [chatBoxes, index, isClosing, isMinimized, setChatBoxes])
+
 	return (
-		<Col xl="4" lg="6" md="12" className="px-0">
+		<Col xl="4" lg="6" md="12" className="px-0 chat-box-wrapper removing">
 			<div
 				ref={ref}
-				className={`chat-window ${
+				className={`chat-window removing ${
 					chat.isFullScreen ? "full-screen" : ""
 				} ${isDragging ? "dragging" : ""} ${
 					hoveredChatIndex === index ? "hovered" : ""
@@ -316,7 +340,9 @@ const ChatList = () => {
 	}
 
 	const closeChat = (index) => {
-		setChatBoxes(chatBoxes.filter((chat) => chat.index !== index))
+		const updatedChatBoxes = [...chatBoxes]
+		updatedChatBoxes[index].isClosing = !updatedChatBoxes[index].isClosing
+		setChatBoxes(updatedChatBoxes)
 	}
 
 	const toggleMinimizeChat = (index) => {
@@ -423,23 +449,23 @@ const ChatList = () => {
 					}`}
 				>
 					<Row className="chat-box-row px-2 pb-3 mx-0">
-						{chatBoxes.map((chat, index) =>
-							!chat.isMinimized ? (
-								<ChatBox
-									key={index}
-									chat={chat}
-									index={index}
-									moveChatBox={moveChatBox}
-									toggleMinimizeChat={toggleMinimizeChat}
-									toggleFullScreenChat={toggleFullScreenChat}
-									closeChat={closeChat}
-									setHoveredChatIndex={setHoveredChatIndex}
-									hoveredChatIndex={hoveredChatIndex}
-								/>
-							) : (
-								<></>
-							)
-						)}
+						{chatBoxes.map((chat, index) => (
+							<ChatBox
+								key={index}
+								chat={chat}
+								index={index}
+								moveChatBox={moveChatBox}
+								isMinimized={chat.isMinimized}
+								isClosing={chat.isClosing}
+								toggleMinimizeChat={toggleMinimizeChat}
+								toggleFullScreenChat={toggleFullScreenChat}
+								closeChat={closeChat}
+								setHoveredChatIndex={setHoveredChatIndex}
+								hoveredChatIndex={hoveredChatIndex}
+								setChatBoxes={setChatBoxes}
+								chatBoxes={chatBoxes}
+							/>
+						))}
 					</Row>
 				</div>
 

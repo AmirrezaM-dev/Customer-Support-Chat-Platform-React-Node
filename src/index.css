@@ -48,11 +48,6 @@ body {
 
 .chat-window-customer.open {
 	display: block;
-	animation: slide-up 0.5s ease;
-}
-
-.chat-window-customer.close {
-	animation: slide-down 0.5s ease;
 }
 
 .chat-header {
@@ -88,26 +83,6 @@ body {
 	padding: 10px;
 	overflow-y: auto;
 	height: calc(100% - 104px);
-	transition: height 0.3s ease;
-}
-
-@keyframes slide-up {
-	from {
-		transform: translateY(100%);
-	}
-	to {
-		transform: translateY(0);
-	}
-}
-
-@keyframes slide-down {
-	from {
-		transform: translateY(0);
-	}
-	to {
-		transform: translateY(100%);
-		display: none;
-	}
 }
 
 .chat-box {
@@ -343,34 +318,6 @@ body {
 	display: none;
 }
 
-.chat-window-transition-enter {
-	max-height: 0;
-	opacity: 0;
-}
-.chat-window-transition-enter-active {
-	max-height: 400px;
-	opacity: 1;
-	transition: max-height 500ms, opacity 500ms;
-}
-.chat-window-transition-exit {
-	max-height: 400px;
-	opacity: 1;
-}
-.chat-window-transition-exit-active {
-	max-height: 0;
-	opacity: 0;
-	transition: max-height 500ms, opacity 500ms;
-}
-.chat-window-transition-appear {
-	max-height: 0;
-	opacity: 0;
-}
-.chat-window-transition-appear-active {
-	max-height: 400px;
-	opacity: 1;
-	transition: max-height 500ms, opacity 500ms;
-}
-
 .chat-nav {
 	background-color: #f8f9fa;
 	padding: 5px 10px;
@@ -454,6 +401,7 @@ body {
 	border-top: 1px solid #ddd;
 	padding: 10px;
 	transition: margin-left 0.3s ease;
+	z-index: 3;
 }
 
 .chat-bar.with-nav {
@@ -486,4 +434,43 @@ body {
 .chat-list,
 .chat-bar {
 	overflow: auto;
+}
+
+/* CSS */
+.fa-slash::before,
+.fa-slash::after {
+	content: "";
+	position: absolute;
+	width: 1.5px; /* Adjust the width of the slash */
+	height: 100%;
+	border-radius: 10px; /* Adjust the border radius for round edges */
+	top: 0;
+	left: 30%;
+	transform: translateX(-50%) rotate(-50deg);
+	pointer-events: none;
+}
+
+.fa-slash::before {
+	z-index: 2;
+	background-color: #f8f9fa; /* Color of the main line */
+}
+
+.fa-slash::after {
+	z-index: 1;
+	background-color: black; /* Color of the bottom line */
+	transform: translateX(-50%) rotate(-50deg) translate(1.5px, 2px); /* Adjust to position beneath the main line */
+}
+
+.icon-wrapper {
+	position: relative;
+	display: inline-block;
+}
+
+.icon-wrapper .fa {
+	position: relative;
+	z-index: 1;
+}
+
+.icon-wrapper.slash .fa-slash {
+	display: block;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react"
+import React, { useState, useRef, useCallback } from "react"
 import {
 	Form,
 	InputGroup,
@@ -18,13 +18,23 @@ import {
 	faExpand,
 	faCompress,
 	faCheck,
-	faVolumeMute,
 	faBan,
-	faStar,
+	faThumbtack,
+	faBellSlash,
+	faRightFromBracket,
+	faEye,
 } from "@fortawesome/free-solid-svg-icons"
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
-import { CSSTransition } from "react-transition-group"
+
+const IconWithSlash = ({ icon, slash }) => {
+	return (
+		<div className={`icon-wrapper ${slash ? "slash" : ""}`}>
+			<FontAwesomeIcon icon={icon} className="fa" />
+			{slash && <span className="fa-slash" />}
+		</div>
+	)
+}
 
 const ChatBox = ({
 	chat,
@@ -36,10 +46,8 @@ const ChatBox = ({
 	setHoveredChatIndex,
 	hoveredChatIndex,
 }) => {
-	const [isHidden, setIsHidden] = useState(false)
 	const [isNavVisible, setIsNavVisible] = useState(false)
 	const ref = useRef(null)
-	const nodeRef = useRef(null)
 
 	const ItemTypes = {
 		CHAT_BOX: "chatBox",
@@ -92,150 +100,121 @@ const ChatBox = ({
 
 	drag(drop(ref))
 
-	useEffect(() => {
-		if (chat.isMinimized) {
-			setIsHidden(true)
-		} else {
-			setIsHidden(false)
-		}
-	}, [chat.isMinimized])
-
 	return (
-		<CSSTransition
-			nodeRef={nodeRef}
-			in={!isHidden}
-			timeout={500}
-			classNames="chat-window-transition"
-			unmountOnExit
-			appear
-		>
-			<Col xl="4" lg="6" md="12" className="px-0" ref={nodeRef}>
-				<div
-					ref={ref}
-					className={`chat-window ${
-						chat.isFullScreen ? "full-screen" : ""
-					} ${isDragging ? "dragging" : ""} ${
-						hoveredChatIndex === index ? "hovered" : ""
-					}`}
-					style={{ opacity: isDragging ? 0.5 : 1 }}
-				>
-					<div className="chat-header d-flex justify-content-between align-items-center">
-						<span>{chat.name}</span>
-						<div>
-							<Button
-								variant="link"
-								onClick={() => setIsNavVisible(!isNavVisible)}
-							>
-								<FontAwesomeIcon icon={faBars} />
-							</Button>
-							<Button
-								variant="link"
-								onClick={() => toggleMinimizeChat(index)}
-							>
-								<FontAwesomeIcon icon={faWindowMinimize} />
-							</Button>
-							<Button
-								variant="link"
-								onClick={() => toggleFullScreenChat(index)}
-							>
-								<FontAwesomeIcon
-									icon={
-										chat.isFullScreen
-											? faCompress
-											: faExpand
-									}
-								/>
-							</Button>
-							<Button
-								variant="link"
-								onClick={() => closeChat(chat.index)}
-							>
-								<FontAwesomeIcon icon={faTimes} />
-							</Button>
-						</div>
-					</div>
-					<CSSTransition
-						nodeRef={nodeRef}
-						in={isNavVisible}
-						timeout={300}
-						classNames="nav-slide"
-						unmountOnExit
-					>
-						<div
-							className="chat-nav d-flex justify-content-center align-items-center"
-							ref={nodeRef}
+		<Col xl="4" lg="6" md="12" className="px-0">
+			<div
+				ref={ref}
+				className={`chat-window ${
+					chat.isFullScreen ? "full-screen" : ""
+				} ${isDragging ? "dragging" : ""} ${
+					hoveredChatIndex === index ? "hovered" : ""
+				}`}
+				style={{ opacity: isDragging ? 0.5 : 1 }}
+			>
+				<div className="chat-header d-flex justify-content-between align-items-center">
+					<span>{chat.name}</span>
+					<div>
+						<Button
+							variant="link"
+							onClick={() => setIsNavVisible(!isNavVisible)}
 						>
-							<Button variant="link" className="text-dark">
-								<FontAwesomeIcon icon={faStar} />
-							</Button>
-							<Button variant="link" className="text-dark">
-								<FontAwesomeIcon icon={faVolumeMute} />
-							</Button>
-							<Button variant="link" className="text-dark">
-								<FontAwesomeIcon icon={faBan} />
-							</Button>
-						</div>
-					</CSSTransition>
-					<div
-						className="chat-body"
-						style={{
-							height: isNavVisible
-								? "calc(100% - 104px)"
-								: "calc(100% - 50px)",
-						}}
-					>
-						<Container className="chat-box">
-							<Row className="messages-row">
-								<Col>
-									<div className="messages">
-										{chat?.messages?.map(
-											(message, index) => (
-												<div
-													key={index}
-													className={`message ${
-														message.user === "main"
-															? "main-user"
-															: "other-user"
-													}`}
-												>
-													{message.text}
-													<div className="message-info">
-														<span className="timestamp">
-															{message.time}
-														</span>
-														{message.user ===
-															"main" &&
-															message.seen && (
-																<FontAwesomeIcon
-																	icon={
-																		faCheck
-																	}
-																	className="seen-icon text-white"
-																/>
-															)}
-													</div>
-												</div>
-											)
-										)}
-									</div>
-								</Col>
-							</Row>
-							<Row className="input-row">
-								<Col>
-									<Form.Control
-										type="text"
-										placeholder="Type a message..."
-									/>
-								</Col>
-								<Col xs="auto">
-									<Button>Send</Button>
-								</Col>
-							</Row>
-						</Container>
+							<FontAwesomeIcon icon={faBars} />
+						</Button>
+						<Button
+							variant="link"
+							onClick={() => toggleMinimizeChat(index)}
+						>
+							<FontAwesomeIcon icon={faWindowMinimize} />
+						</Button>
+						<Button
+							variant="link"
+							onClick={() => toggleFullScreenChat(index)}
+						>
+							<FontAwesomeIcon
+								icon={chat.isFullScreen ? faCompress : faExpand}
+							/>
+						</Button>
+						<Button
+							variant="link"
+							onClick={() => closeChat(chat.index)}
+						>
+							<FontAwesomeIcon icon={faTimes} />
+						</Button>
 					</div>
 				</div>
-			</Col>
-		</CSSTransition>
+				{isNavVisible && (
+					<div className="chat-nav d-flex justify-content-center align-items-center">
+						<Button variant="link" className="text-dark">
+							<FontAwesomeIcon icon={faEye} />
+						</Button>
+						<Button variant="link" className="text-dark">
+							<IconWithSlash icon={faThumbtack} slash={true} />
+						</Button>
+						<Button variant="link" className="text-dark">
+							<FontAwesomeIcon icon={faBellSlash} />
+						</Button>
+						<Button variant="link" className="text-dark">
+							<FontAwesomeIcon icon={faRightFromBracket} />
+						</Button>
+						<Button variant="link" className="text-dark">
+							<FontAwesomeIcon icon={faBan} />
+						</Button>
+					</div>
+				)}
+				<div
+					className="chat-body"
+					style={{
+						height: isNavVisible
+							? "calc(100% - 104px)"
+							: "calc(100% - 50px)",
+					}}
+				>
+					<Container className="chat-box">
+						<Row className="messages-row">
+							<Col>
+								<div className="messages">
+									{chat?.messages?.map((message, index) => (
+										<div
+											key={index}
+											className={`message ${
+												message.user === "main"
+													? "main-user"
+													: "other-user"
+											}`}
+										>
+											{message.text}
+											<div className="message-info">
+												<span className="timestamp">
+													{message.time}
+												</span>
+												{message.user === "main" &&
+													message.seen && (
+														<FontAwesomeIcon
+															icon={faCheck}
+															className="seen-icon text-white"
+														/>
+													)}
+											</div>
+										</div>
+									))}
+								</div>
+							</Col>
+						</Row>
+						<Row className="input-row">
+							<Col>
+								<Form.Control
+									type="text"
+									placeholder="Type a message..."
+								/>
+							</Col>
+							<Col xs="auto">
+								<Button>Send</Button>
+							</Col>
+						</Row>
+					</Container>
+				</div>
+			</div>
+		</Col>
 	)
 }
 
@@ -444,19 +423,23 @@ const ChatList = () => {
 					}`}
 				>
 					<Row className="chat-box-row px-2 pb-3 mx-0">
-						{chatBoxes.map((chat, index) => (
-							<ChatBox
-								key={index}
-								chat={chat}
-								index={index}
-								moveChatBox={moveChatBox}
-								toggleMinimizeChat={toggleMinimizeChat}
-								toggleFullScreenChat={toggleFullScreenChat}
-								closeChat={closeChat}
-								setHoveredChatIndex={setHoveredChatIndex}
-								hoveredChatIndex={hoveredChatIndex}
-							/>
-						))}
+						{chatBoxes.map((chat, index) =>
+							!chat.isMinimized ? (
+								<ChatBox
+									key={index}
+									chat={chat}
+									index={index}
+									moveChatBox={moveChatBox}
+									toggleMinimizeChat={toggleMinimizeChat}
+									toggleFullScreenChat={toggleFullScreenChat}
+									closeChat={closeChat}
+									setHoveredChatIndex={setHoveredChatIndex}
+									hoveredChatIndex={hoveredChatIndex}
+								/>
+							) : (
+								<></>
+							)
+						)}
 					</Row>
 				</div>
 

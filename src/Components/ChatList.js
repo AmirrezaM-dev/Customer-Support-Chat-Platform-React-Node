@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from "react"
+import React, { useState, useRef, useCallback, useEffect } from "react"
 import {
 	Form,
 	InputGroup,
@@ -18,6 +18,9 @@ import {
 	faExpand,
 	faCompress,
 	faCheck,
+	faVolumeMute,
+	faBan,
+	faStar,
 } from "@fortawesome/free-solid-svg-icons"
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -34,7 +37,9 @@ const ChatBox = ({
 	hoveredChatIndex,
 }) => {
 	const [isHidden, setIsHidden] = useState(false)
+	const [isNavVisible, setIsNavVisible] = useState(false)
 	const ref = useRef(null)
+	const nodeRef = useRef(null) // Added ref for CSSTransition
 
 	const ItemTypes = {
 		CHAT_BOX: "chatBox",
@@ -97,13 +102,16 @@ const ChatBox = ({
 
 	return (
 		<CSSTransition
+			nodeRef={nodeRef} // Add nodeRef here
 			in={!isHidden}
 			timeout={500}
 			classNames="chat-window-transition"
 			unmountOnExit
 			appear
 		>
-			<Col xl="4" lg="6" md="12" className="px-0">
+			<Col xl="4" lg="6" md="12" className="px-0" ref={nodeRef}>
+				{" "}
+				{/* Add ref here */}
 				<div
 					ref={ref}
 					className={`chat-window ${
@@ -116,6 +124,12 @@ const ChatBox = ({
 					<div className="chat-header d-flex justify-content-between align-items-center">
 						<span>{chat.name}</span>
 						<div>
+							<Button
+								variant="link"
+								onClick={() => setIsNavVisible(!isNavVisible)}
+							>
+								<FontAwesomeIcon icon={faBars} />
+							</Button>
 							<Button
 								variant="link"
 								onClick={() => toggleMinimizeChat(index)}
@@ -142,7 +156,38 @@ const ChatBox = ({
 							</Button>
 						</div>
 					</div>
-					<div className="chat-body">
+					<CSSTransition
+						nodeRef={nodeRef} // Add nodeRef here
+						in={isNavVisible}
+						timeout={300}
+						classNames="nav-slide"
+						unmountOnExit
+					>
+						<div
+							className="chat-nav d-flex justify-content-center align-items-center"
+							ref={nodeRef}
+						>
+							{" "}
+							{/* Add ref here */}
+							<Button variant="link" className="text-dark">
+								<FontAwesomeIcon icon={faStar} />
+							</Button>
+							<Button variant="link" className="text-dark">
+								<FontAwesomeIcon icon={faVolumeMute} />
+							</Button>
+							<Button variant="link" className="text-dark">
+								<FontAwesomeIcon icon={faBan} />
+							</Button>
+						</div>
+					</CSSTransition>
+					<div
+						className="chat-body"
+						style={{
+							height: isNavVisible
+								? "calc(100% - 104px)"
+								: "calc(100% - 50px)",
+						}}
+					>
 						<Container className="chat-box">
 							<Row className="messages-row">
 								<Col>
@@ -198,6 +243,7 @@ const ChatList = () => {
 	const toggleButtonRef = useRef()
 	const [chatBoxes, setChatBoxes] = useState([])
 	const [hoveredChatIndex, setHoveredChatIndex] = useState(null)
+	const [isSideNavVisible, setIsSideNavVisible] = useState(false)
 
 	const chatItems = [
 		{
@@ -208,21 +254,21 @@ const ChatList = () => {
 			unseenMessages: 2,
 		},
 		{
-			name: "Bob1",
+			name: "Bob",
 			lastMessage: "Let's catch up later.",
 			time: "1:30 PM",
 			online: false,
 			unseenMessages: 0,
 		},
 		{
-			name: "Bob2",
+			name: "Bob",
 			lastMessage: "Let's catch up later.",
 			time: "1:30 PM",
 			online: false,
 			unseenMessages: 0,
 		},
 		{
-			name: "Bob3",
+			name: "Bob",
 			lastMessage: "Let's catch up later.",
 			time: "1:30 PM",
 			online: false,
@@ -238,28 +284,23 @@ const ChatList = () => {
 		)
 
 		if (chatIndex === -1) {
-			// Chat is not in chatBoxes, add it to the end
 			const newChatBox = {
 				...chatItems[index],
 				isMinimized: false,
-				isFullScreen: isAnyFullScreen, // Set to full-screen if there is already a full-screen chat
+				isFullScreen: isAnyFullScreen,
 				index,
 			}
 			setChatBoxes([...chatBoxes, newChatBox])
 		} else {
 			const updatedChatBoxes = [...chatBoxes]
-			// Update the chat's minimized state
 			updatedChatBoxes[chatIndex].isMinimized = false
-			// Update the chat's full-screen state if there is already a full-screen chat and it's not minimized
 			if (isAnyFullScreen && !updatedChatBoxes[chatIndex].isFullScreen) {
 				updatedChatBoxes.forEach((chat) => (chat.isFullScreen = false))
 				updatedChatBoxes[chatIndex].isFullScreen = true
 			}
 
 			if (!fromMinimizedBar) {
-				// Remove the chat from its current position
 				const [chat] = updatedChatBoxes.splice(chatIndex, 1)
-				// Add the chat to the beginning
 				setChatBoxes([chat, ...updatedChatBoxes])
 			} else {
 				setChatBoxes(updatedChatBoxes)
@@ -270,7 +311,7 @@ const ChatList = () => {
 	const toggleFullScreenChat = (index) => {
 		const updatedChatBoxes = chatBoxes.map((chat, i) => ({
 			...chat,
-			isFullScreen: i === index ? !chat.isFullScreen : false, // Toggle full-screen for the clicked chat and reset others
+			isFullScreen: i === index ? !chat.isFullScreen : false,
 		}))
 		setChatBoxes(updatedChatBoxes)
 	}
@@ -300,7 +341,20 @@ const ChatList = () => {
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className="chat-app-container">
-				<div className="chat-list-container">
+				<Button
+					className={`p-0 px-2 side-nav-toggle shadow ${
+						isSideNavVisible ? "open" : ""
+					}`}
+					onClick={() => setIsSideNavVisible(!isSideNavVisible)}
+					variant="secondary"
+				>
+					<FontAwesomeIcon icon={faBars} />
+				</Button>
+				<div
+					className={`side-nav ${
+						isSideNavVisible ? "visible" : "hidden"
+					}`}
+				>
 					<div className="search-menu-container p-3">
 						<InputGroup>
 							<Form.Control
@@ -362,8 +416,12 @@ const ChatList = () => {
 					</ListGroup>
 				</div>
 
-				<div className="chat-box-container">
-					<Row className="chat-box-row px-2 mx-0">
+				<div
+					className={`chat-box-container ${
+						isSideNavVisible ? "with-nav" : "without-nav"
+					}`}
+				>
+					<Row className="chat-box-row px-2 pb-3 mx-0">
 						{chatBoxes.map((chat, index) => (
 							<ChatBox
 								key={index}
@@ -380,7 +438,11 @@ const ChatList = () => {
 					</Row>
 				</div>
 
-				<div className="chat-bar">
+				<div
+					className={`chat-bar ${
+						isSideNavVisible ? "with-nav" : "without-nav"
+					}`}
+				>
 					{chatBoxes.map((chat, index) => (
 						<div
 							key={index}

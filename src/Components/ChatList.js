@@ -27,10 +27,6 @@ import {
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
-const updateChatBoxState = (chatBoxes, index, updater) => {
-	return chatBoxes.map((chat, i) => (i === index ? updater(chat) : chat))
-}
-
 const IconWithSlash = ({ icon, slash }) => {
 	return (
 		<div className={`icon-wrapper ${slash ? "slash" : ""}`}>
@@ -114,10 +110,7 @@ const ChatBox = ({
 				ref?.current?.classList?.add("removing")
 				ref?.current?.parentElement?.classList?.add("removing")
 			})
-
-			return () => {
-				cancelAnimationFrame(frameId)
-			}
+			return () => cancelAnimationFrame(frameId)
 		} else {
 			const frameId = requestAnimationFrame(() => {
 				ref?.current?.classList?.remove("removing")
@@ -128,7 +121,7 @@ const ChatBox = ({
 	}, [chatBoxes, index, isClosing, isMinimized, setChatBoxes])
 
 	return (
-		<Col xl="4" lg="6" md="12" className={`px-0 chat-box-wrapper removing`}>
+		<Col xl="4" lg="6" md="12" className="px-0 chat-box-wrapper removing">
 			<div
 				ref={ref}
 				className={`chat-window removing ${
@@ -161,7 +154,10 @@ const ChatBox = ({
 								icon={chat.isFullScreen ? faCompress : faExpand}
 							/>
 						</Button>
-						<Button variant="link" onClick={() => closeChat(index)}>
+						<Button
+							variant="link"
+							onClick={() => closeChat(chat.index)}
+						>
 							<FontAwesomeIcon icon={faTimes} />
 						</Button>
 					</div>
@@ -197,9 +193,9 @@ const ChatBox = ({
 						<Row className="messages-row">
 							<Col>
 								<div className="messages">
-									{chat?.messages?.map((message, i) => (
+									{chat?.messages?.map((message, index) => (
 										<div
-											key={i}
+											key={index}
 											className={`message ${
 												message.user === "main"
 													? "main-user"
@@ -264,7 +260,7 @@ const ChatList = () => {
 			unseenMessages: 0,
 		},
 		{
-			name: "Bob2",
+			name: "Bob",
 			lastMessage: "Let's catch up later.",
 			time: "1:30 PM",
 			online: false,
@@ -301,21 +297,22 @@ const ChatList = () => {
 	]
 
 	const openChat = (index, fromMinimizedBar = false) => {
-		const chatIndex = chatBoxes.findIndex((_, i) => i === index)
-		const isAnyFullScreen = chatBoxes.some(
-			(chat) => chat.isFullScreen && !chat.isMinimized
-		)
+		setChatBoxes((prevChatBoxes) => {
+			const chatIndex = prevChatBoxes.findIndex((c) => c.index === index)
+			const isAnyFullScreen = prevChatBoxes.some(
+				(chat) => chat.isFullScreen && !chat.isMinimized
+			)
 
-		if (chatIndex === -1) {
-			const newChatBox = {
-				...chatItems[index],
-				isMinimized: false,
-				isFullScreen: isAnyFullScreen,
-			}
-			setChatBoxes((chatBoxes) => [...chatBoxes, newChatBox])
-		} else {
-			setChatBoxes((chatBoxes) => {
-				const updatedChatBoxes = [...chatBoxes]
+			if (chatIndex === -1) {
+				const newChatBox = {
+					...chatItems[index],
+					isMinimized: false,
+					isFullScreen: isAnyFullScreen,
+					index,
+				}
+				return [...prevChatBoxes, newChatBox]
+			} else {
+				const updatedChatBoxes = [...prevChatBoxes]
 				updatedChatBoxes[chatIndex].isMinimized = false
 				if (
 					isAnyFullScreen &&
@@ -333,44 +330,45 @@ const ChatList = () => {
 				} else {
 					return updatedChatBoxes
 				}
-			})
-		}
+			}
+		})
 	}
 
 	const toggleFullScreenChat = (index) => {
-		setChatBoxes((chatBoxes) =>
-			updateChatBoxState(chatBoxes, index, (chat) => ({
+		setChatBoxes((prevChatBoxes) =>
+			prevChatBoxes.map((chat, i) => ({
 				...chat,
-				isFullScreen: !chat.isFullScreen,
+				isFullScreen: i === index ? !chat.isFullScreen : false,
 			}))
 		)
 	}
 
 	const closeChat = (index) => {
-		setChatBoxes((chatBoxes) =>
-			updateChatBoxState(chatBoxes, index, (chat) => ({
-				...chat,
-				isClosing: true,
-			}))
-		)
-		setTimeout(() => {
-			setChatBoxes((chatBoxes) => chatBoxes.filter((_, i) => i !== index))
-		}, 500)
+		setChatBoxes((prevChatBoxes) => {
+			const updatedChatBoxes = [...prevChatBoxes]
+			updatedChatBoxes[index].isClosing =
+				!updatedChatBoxes[index].isClosing
+			return updatedChatBoxes
+		})
+		// setTimeout(() => {
+		// 	setChatBoxes((prevChatBoxes) => prevChatBoxes.filter((chat) => chat.index !== index))
+		// }, 500)
 	}
 
 	const toggleMinimizeChat = (index) => {
-		setChatBoxes((chatBoxes) =>
-			updateChatBoxState(chatBoxes, index, (chat) => ({
-				...chat,
-				isMinimized: !chat.isMinimized,
-			}))
-		)
+		setChatBoxes((prevChatBoxes) => {
+			const updatedChatBoxes = [...prevChatBoxes]
+			updatedChatBoxes[index].isMinimized =
+				!updatedChatBoxes[index].isMinimized
+			return updatedChatBoxes
+		})
 	}
 
 	const moveChatBox = useCallback((dragIndex, hoverIndex) => {
-		setChatBoxes((chatBoxes) => {
-			const updatedChatBoxes = [...chatBoxes]
-			const [draggedChatBox] = updatedChatBoxes.splice(dragIndex, 1)
+		setChatBoxes((prevChatBoxes) => {
+			const draggedChatBox = prevChatBoxes[dragIndex]
+			const updatedChatBoxes = [...prevChatBoxes]
+			updatedChatBoxes.splice(dragIndex, 1)
 			updatedChatBoxes.splice(hoverIndex, 0, draggedChatBox)
 			return updatedChatBoxes
 		})
@@ -496,7 +494,7 @@ const ChatList = () => {
 							onClick={(e) => {
 								if (e.target.nodeName === "DIV")
 									chat.isMinimized
-										? openChat(index, true)
+										? openChat(chat.index, true)
 										: toggleMinimizeChat(index)
 							}}
 						>
@@ -506,7 +504,7 @@ const ChatList = () => {
 								className={`ms-2 me-0 ${
 									chat.isMinimized ? "" : "text-white"
 								}`}
-								onClick={() => closeChat(index)}
+								onClick={() => closeChat(chat.index)}
 							>
 								<FontAwesomeIcon icon={faTimes} />
 							</Button>

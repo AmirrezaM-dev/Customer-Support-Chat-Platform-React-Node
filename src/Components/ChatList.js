@@ -27,6 +27,10 @@ import {
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
+const updateChatBoxState = (chatBoxes, index, updater) => {
+	return chatBoxes.map((chat, i) => (i === index ? updater(chat) : chat))
+}
+
 const IconWithSlash = ({ icon, slash }) => {
 	return (
 		<div className={`icon-wrapper ${slash ? "slash" : ""}`}>
@@ -334,33 +338,33 @@ const ChatList = () => {
 	}
 
 	const toggleFullScreenChat = (index) => {
-		setChatBoxes((chatBoxes) => {
-			return chatBoxes.map((chat, i) => ({
+		setChatBoxes((chatBoxes) =>
+			updateChatBoxState(chatBoxes, index, (chat) => ({
 				...chat,
-				isFullScreen: i === index ? !chat.isFullScreen : false,
+				isFullScreen: !chat.isFullScreen,
 			}))
-		})
+		)
 	}
 
 	const closeChat = (index) => {
-		setChatBoxes((chatBoxes) => {
-			return chatBoxes.map((chat, i) => {
-				return i === index ? { ...chat, isClosing: true } : chat
-			})
-		})
+		setChatBoxes((chatBoxes) =>
+			updateChatBoxState(chatBoxes, index, (chat) => ({
+				...chat,
+				isClosing: true,
+			}))
+		)
 		setTimeout(() => {
 			setChatBoxes((chatBoxes) => chatBoxes.filter((_, i) => i !== index))
 		}, 500)
 	}
 
 	const toggleMinimizeChat = (index) => {
-		setChatBoxes((chatBoxes) => {
-			return chatBoxes.map((chat, i) => {
-				return i === index
-					? { ...chat, isMinimized: !chat.isMinimized }
-					: chat
-			})
-		})
+		setChatBoxes((chatBoxes) =>
+			updateChatBoxState(chatBoxes, index, (chat) => ({
+				...chat,
+				isMinimized: !chat.isMinimized,
+			}))
+		)
 	}
 
 	const moveChatBox = useCallback((dragIndex, hoverIndex) => {

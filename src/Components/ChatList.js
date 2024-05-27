@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import {
 	Form,
 	InputGroup,
@@ -24,233 +24,30 @@ import {
 	faRightFromBracket,
 	faEye,
 } from "@fortawesome/free-solid-svg-icons"
-import { DndProvider, useDrag, useDrop } from "react-dnd"
-import { HTML5Backend } from "react-dnd-html5-backend"
-
-const IconWithSlash = ({ icon, slash }) => {
-	return (
-		<div className={`icon-wrapper ${slash ? "slash" : ""}`}>
-			<FontAwesomeIcon icon={icon} className="fa" />
-			{slash && <span className="fa-slash" />}
-		</div>
-	)
-}
-
-const ChatBox = ({
-	chat,
-	index,
-	moveChatBox,
-	toggleMinimizeChat,
-	toggleFullScreenChat,
-	closeChat,
-	setHoveredChatIndex,
-	hoveredChatIndex,
-	isMinimized,
-	isClosing,
-	setChatBoxes,
-	chatBoxes,
-}) => {
-	const [isNavVisible, setIsNavVisible] = useState(false)
-	const ref = useRef(null)
-
-	const ItemTypes = {
-		CHAT_BOX: "chatBox",
-	}
-
-	const [, drop] = useDrop({
-		accept: ItemTypes.CHAT_BOX,
-		hover(item, monitor) {
-			if (!ref.current) return
-
-			const dragIndex = item.index
-			const hoverIndex = index
-
-			if (dragIndex === hoverIndex) return
-
-			const hoverBoundingRect = ref.current?.getBoundingClientRect()
-			const hoverMiddleY =
-				(hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-			const clientOffset = monitor.getClientOffset()
-			const hoverClientY = clientOffset.y - hoverBoundingRect.top
-
-			if (dragIndex < hoverIndex && hoverClientY > hoverMiddleY * 0.2) {
-				moveChatBox(dragIndex, hoverIndex)
-				item.index = hoverIndex
-				setHoveredChatIndex(hoverIndex)
-			} else if (
-				dragIndex > hoverIndex &&
-				hoverClientY < hoverMiddleY * 1.8
-			) {
-				moveChatBox(dragIndex, hoverIndex)
-				item.index = hoverIndex
-				setHoveredChatIndex(hoverIndex)
-			}
-		},
-		drop() {
-			setHoveredChatIndex(null)
-		},
-	})
-
-	const [{ isDragging }, drag] = useDrag({
-		type: ItemTypes.CHAT_BOX,
-		item: { type: ItemTypes.CHAT_BOX, index },
-		collect: (monitor) => ({
-			isDragging: monitor.isDragging(),
-		}),
-		end() {
-			setHoveredChatIndex(null)
-		},
-	})
-
-	drag(drop(ref))
-
-	useEffect(() => {
-		if (isMinimized || isClosing) {
-			const frameId = requestAnimationFrame(() => {
-				ref?.current?.classList?.add("removing")
-				ref?.current?.parentElement?.classList?.add("removing")
-			})
-			return () => cancelAnimationFrame(frameId)
-		} else {
-			const frameId = requestAnimationFrame(() => {
-				ref?.current?.classList?.remove("removing")
-				ref?.current?.parentElement?.classList?.remove("removing")
-			})
-			return () => cancelAnimationFrame(frameId)
-		}
-	}, [chatBoxes, index, isClosing, isMinimized, setChatBoxes])
-
-	return (
-		<Col xl="4" lg="6" md="12" className="px-0 chat-box-wrapper removing">
-			<div
-				ref={ref}
-				className={`chat-window removing ${
-					chat.isFullScreen ? "full-screen" : ""
-				} ${isDragging ? "dragging" : ""} ${
-					hoveredChatIndex === index ? "hovered" : ""
-				}`}
-				style={{ opacity: isDragging ? 0.5 : 1 }}
-			>
-				<div className="chat-header d-flex justify-content-between align-items-center">
-					<span>{chat.name}</span>
-					<div>
-						<Button
-							variant="link"
-							onClick={() => setIsNavVisible(!isNavVisible)}
-						>
-							<FontAwesomeIcon icon={faBars} />
-						</Button>
-						<Button
-							variant="link"
-							onClick={() => toggleMinimizeChat(index)}
-						>
-							<FontAwesomeIcon icon={faWindowMinimize} />
-						</Button>
-						<Button
-							variant="link"
-							onClick={() => toggleFullScreenChat(index)}
-						>
-							<FontAwesomeIcon
-								icon={chat.isFullScreen ? faCompress : faExpand}
-							/>
-						</Button>
-						<Button
-							variant="link"
-							onClick={() => closeChat(chat.index)}
-						>
-							<FontAwesomeIcon icon={faTimes} />
-						</Button>
-					</div>
-				</div>
-				{isNavVisible && (
-					<div className="chat-nav d-flex justify-content-center align-items-center">
-						<Button variant="link" className="text-dark">
-							<FontAwesomeIcon icon={faEye} />
-						</Button>
-						<Button variant="link" className="text-dark">
-							<IconWithSlash icon={faThumbtack} slash={true} />
-						</Button>
-						<Button variant="link" className="text-dark">
-							<FontAwesomeIcon icon={faBellSlash} />
-						</Button>
-						<Button variant="link" className="text-dark">
-							<FontAwesomeIcon icon={faRightFromBracket} />
-						</Button>
-						<Button variant="link" className="text-dark">
-							<FontAwesomeIcon icon={faBan} />
-						</Button>
-					</div>
-				)}
-				<div
-					className="chat-body"
-					style={{
-						height: isNavVisible
-							? "calc(100% - 104px)"
-							: "calc(100% - 50px)",
-					}}
-				>
-					<Container className="chat-box">
-						<Row className="messages-row">
-							<Col>
-								<div className="messages">
-									{chat?.messages?.map((message, index) => (
-										<div
-											key={index}
-											className={`message ${
-												message.user === "main"
-													? "main-user"
-													: "other-user"
-											}`}
-										>
-											{message.text}
-											<div className="message-info">
-												<span className="timestamp">
-													{message.time}
-												</span>
-												{message.user === "main" &&
-													message.seen && (
-														<FontAwesomeIcon
-															icon={faCheck}
-															className="seen-icon text-white"
-														/>
-													)}
-											</div>
-										</div>
-									))}
-								</div>
-							</Col>
-						</Row>
-						<Row className="input-row">
-							<Col>
-								<Form.Control
-									type="text"
-									placeholder="Type a message..."
-								/>
-							</Col>
-							<Col xs="auto">
-								<Button>Send</Button>
-							</Col>
-						</Row>
-					</Container>
-				</div>
-			</div>
-		</Col>
-	)
-}
 
 const ChatList = () => {
-	const toggleButtonRef = useRef()
-	const [chatBoxes, setChatBoxes] = useState([])
-	const [hoveredChatIndex, setHoveredChatIndex] = useState(null)
-	const [isSideNavVisible, setIsSideNavVisible] = useState(false)
+	const IconWithSlash = ({ icon, slash }) => {
+		return (
+			<div className={`icon-wrapper ${slash ? "slash" : ""}`}>
+				<FontAwesomeIcon icon={icon} className="fa" />
+				{slash && <span className="fa-slash" />}
+			</div>
+		)
+	}
 
-	const chatItems = [
+	const toggleButtonRef = useRef()
+	const [isSideNavVisible, setIsSideNavVisible] = useState(false)
+	const [chatItems, setChatItems] = useState([
 		{
 			name: "Alice",
 			lastMessage: "Hey, how are you?",
 			time: "2:45 PM",
 			online: true,
 			unseenMessages: 2,
+			isNavVisible: false,
+			isOpen: false,
+			date: 1716815415312 + 2000,
+			order: 2,
 		},
 		{
 			name: "Bob",
@@ -258,85 +55,71 @@ const ChatList = () => {
 			time: "1:30 PM",
 			online: false,
 			unseenMessages: 0,
+			isNavVisible: false,
+			isOpen: false,
+			date: 1716815415312 + 1000,
+			order: 1,
 		},
 		{
-			name: "Bob",
-			lastMessage: "Let's catch up later.",
-			time: "1:30 PM",
-			online: false,
-			unseenMessages: 0,
+			name: "Charlie",
+			lastMessage: "See you soon!",
+			time: "12:15 PM",
+			online: true,
+			unseenMessages: 1,
+			isNavVisible: false,
+			isOpen: false,
+			date: 1716815415312,
+			order: 0,
 		},
-		{
-			name: "Bob",
-			lastMessage: "Let's catch up later.",
-			time: "1:30 PM",
-			online: false,
-			unseenMessages: 0,
-		},
-		{
-			name: "Bob",
-			lastMessage: "Let's catch up later.",
-			time: "1:30 PM",
-			online: false,
-			unseenMessages: 0,
-		},
-		{
-			name: "Bob",
-			lastMessage: "Let's catch up later.",
-			time: "1:30 PM",
-			online: false,
-			unseenMessages: 0,
-		},
-		{
-			name: "Bob",
-			lastMessage: "Let's catch up later.",
-			time: "1:30 PM",
-			online: false,
-			unseenMessages: 0,
-		},
-	]
+		// Add more chat items as needed
+	])
 
-	const openChat = (index, fromMinimizedBar = false) => {
-		setChatBoxes((prevChatBoxes) => {
-			const chatIndex = prevChatBoxes.findIndex((c) => c.index === index)
-			const isAnyFullScreen = prevChatBoxes.some(
-				(chat) => chat.isFullScreen && !chat.isMinimized
+	const openChat = (index) => {
+		setChatItems((prevChatItems) => {
+			const maxOrderItem = prevChatItems.reduce(
+				(maxItem, currentItem) => {
+					return currentItem.isOpen
+						? currentItem.order > maxItem.order
+							? currentItem
+							: maxItem
+						: maxItem
+				},
+				{ order: -1 }
 			)
 
-			if (chatIndex === -1) {
-				const newChatBox = {
-					...chatItems[index],
-					isMinimized: false,
-					isFullScreen: isAnyFullScreen,
-					index,
-				}
-				return [...prevChatBoxes, newChatBox]
-			} else {
-				const updatedChatBoxes = [...prevChatBoxes]
-				updatedChatBoxes[chatIndex].isMinimized = false
-				if (
-					isAnyFullScreen &&
-					!updatedChatBoxes[chatIndex].isFullScreen
-				) {
-					updatedChatBoxes.forEach(
-						(chat) => (chat.isFullScreen = false)
-					)
-					updatedChatBoxes[chatIndex].isFullScreen = true
-				}
-
-				if (!fromMinimizedBar) {
-					const [chat] = updatedChatBoxes.splice(chatIndex, 1)
-					return [chat, ...updatedChatBoxes]
-				} else {
-					return updatedChatBoxes
-				}
-			}
+			return prevChatItems
+				.sort((a, b) => b.date - a.date)
+				.map((item, i) => {
+					return i === index
+						? {
+								...item,
+								isOpen: true,
+								isMinimized: false,
+								isClosed: false,
+								order:
+									maxOrderItem.order === item.order
+										? item.order
+										: maxOrderItem.order + 1,
+						  }
+						: item
+				})
 		})
 	}
 
+	useEffect(() => {
+		if (chatItems.some((_) => _?.isOpen === false && _?.isClosed === false))
+			setChatItems((chatItems) => {
+				return chatItems
+					.sort((a, b) => b.date - a.date)
+					.map((_) => {
+						return _?.isOpen === false ? { ..._, isOpen: true } : _
+					})
+			})
+	}, [chatItems])
+
 	const toggleFullScreenChat = (index) => {
-		setChatBoxes((prevChatBoxes) =>
-			prevChatBoxes.map((chat, i) => ({
+		setChatItems((prevChatItemses) =>
+			prevChatItemses.map((chat, i) => ({
 				...chat,
 				isFullScreen: i === index ? !chat.isFullScreen : false,
 			}))
@@ -344,85 +127,79 @@ const ChatList = () => {
 	}
 
 	const closeChat = (index) => {
-		setChatBoxes((prevChatBoxes) => {
-			const updatedChatBoxes = [...prevChatBoxes]
-			updatedChatBoxes[index].isClosing =
-				!updatedChatBoxes[index].isClosing
-			return updatedChatBoxes
+		setChatItems((prevChatItemses) => {
+			const updatedChatItemses = [...prevChatItemses]
+			updatedChatItemses[index].isOpen = false
+			updatedChatItemses[index].isClosed = true
+			updatedChatItemses[index].changeOrderTo = 0
+			return updatedChatItemses
 		})
-		// setTimeout(() => {
-		// 	setChatBoxes((prevChatBoxes) => prevChatBoxes.filter((chat) => chat.index !== index))
-		// }, 500)
 	}
 
 	const toggleMinimizeChat = (index) => {
-		setChatBoxes((prevChatBoxes) => {
-			const updatedChatBoxes = [...prevChatBoxes]
-			updatedChatBoxes[index].isMinimized =
-				!updatedChatBoxes[index].isMinimized
-			return updatedChatBoxes
+		setChatItems((prevChatItemses) => {
+			const updatedChatItemses = [...prevChatItemses]
+			updatedChatItemses[index].isMinimized =
+				!updatedChatItemses[index].isMinimized
+			return updatedChatItemses
 		})
 	}
 
-	const moveChatBox = useCallback((dragIndex, hoverIndex) => {
-		setChatBoxes((prevChatBoxes) => {
-			const draggedChatBox = prevChatBoxes[dragIndex]
-			const updatedChatBoxes = [...prevChatBoxes]
-			updatedChatBoxes.splice(dragIndex, 1)
-			updatedChatBoxes.splice(hoverIndex, 0, draggedChatBox)
-			return updatedChatBoxes
+	const toggleNavVisibility = (index) => {
+		setChatItems((prevChatItemses) => {
+			const updatedChatItemses = [...prevChatItemses]
+			updatedChatItemses[index].isNavVisible =
+				!updatedChatItemses[index].isNavVisible
+			return updatedChatItemses
 		})
-	}, [])
+	}
 
 	return (
-		<DndProvider backend={HTML5Backend}>
-			<div className="chat-app-container">
-				<Button
-					className={`p-0 px-2 side-nav-toggle ${
-						isSideNavVisible ? "open" : "shadow"
-					}`}
-					onClick={() => setIsSideNavVisible(!isSideNavVisible)}
-					variant={isSideNavVisible ? "link" : "secondary"}
-				>
-					<FontAwesomeIcon
-						icon={isSideNavVisible ? faTimes : faBars}
-					/>
-				</Button>
-				<div
-					className={`side-nav ${
-						isSideNavVisible ? "visible" : "hidden"
-					}`}
-				>
-					<div className="search-menu-container p-3">
-						<InputGroup>
-							<Form.Control
-								placeholder="Search..."
-								aria-label="Search"
-							/>
-							<InputGroup.Text
-								className="cursor-pointer"
-								onClick={() =>
-									toggleButtonRef?.current?.click()
-								}
-							>
-								<Dropdown alignRight>
-									<Dropdown.Toggle
-										variant="link"
-										className="p-0 custom-dropdown-toggle"
-										ref={toggleButtonRef}
-									>
-										<FontAwesomeIcon icon={faBars} />
-									</Dropdown.Toggle>
-									<Dropdown.Menu>
-										<Dropdown.Item>Logout</Dropdown.Item>
-									</Dropdown.Menu>
-								</Dropdown>
-							</InputGroup.Text>
-						</InputGroup>
-					</div>
+		<div className="chat-app-container">
+			<Button
+				className={`p-0 px-2 side-nav-toggle ${
+					isSideNavVisible ? "open" : "shadow"
+				}`}
+				onClick={() => setIsSideNavVisible(!isSideNavVisible)}
+				variant={isSideNavVisible ? "link" : "secondary"}
+			>
+				<FontAwesomeIcon icon={isSideNavVisible ? faTimes : faBars} />
+			</Button>
+			<div
+				className={`side-nav ${
+					isSideNavVisible ? "visible" : "hidden"
+				}`}
+			>
+				<div className="search-menu-container p-3">
+					<InputGroup>
+						<Form.Control
+							placeholder="Search..."
+							aria-label="Search"
+						/>
+						<InputGroup.Text
+							className="cursor-pointer"
+							onClick={() => toggleButtonRef?.current?.click()}
+						>
+							<Dropdown alignRight>
+								<Dropdown.Toggle
+									variant="link"
+									className="p-0 custom-dropdown-toggle"
+									ref={toggleButtonRef}
+								>
+									<FontAwesomeIcon icon={faBars} />
+								</Dropdown.Toggle>
+								<Dropdown.Menu>
+									<Dropdown.Item>Logout</Dropdown.Item>
+								</Dropdown.Menu>
+							</Dropdown>
+						</InputGroup.Text>
+					</InputGroup>
+				</div>
 
-					<ListGroup className="chat-list" variant="flush">
-						{chatItems.map((chat, index) => (
+				<ListGroup className="chat-list" variant="flush">
+					{chatItems
+						.sort((a, b) => b.date - a.date)
+						.map((chat, index) => (
 							<ListGroup.Item
 								key={index}
 								className="d-flex justify-content-between align-items-center"
@@ -451,51 +228,218 @@ const ChatList = () => {
 								</div>
 							</ListGroup.Item>
 						))}
-					</ListGroup>
-				</div>
+				</ListGroup>
+			</div>
 
-				<div
-					className={`chat-box-container pb-5 ${
-						isSideNavVisible ? "with-nav" : "without-nav"
-					}`}
-				>
-					<Row className="chat-box-row px-2 pb-3 mx-0">
-						{chatBoxes.map((chat, index) => (
-							<ChatBox
+			<div
+				className={`chat-box-container pb-5 ${
+					isSideNavVisible ? "with-nav" : "without-nav"
+				}`}
+			>
+				<Row className="chat-box-row px-2 pb-3 mx-0">
+					{chatItems
+						.sort((a, b) => b.order - a.order)
+						.map((chat, index) => (
+							<Col
 								key={index}
-								chat={chat}
-								index={index}
-								moveChatBox={moveChatBox}
-								isMinimized={chat.isMinimized}
-								isClosing={chat.isClosing}
-								toggleMinimizeChat={toggleMinimizeChat}
-								toggleFullScreenChat={toggleFullScreenChat}
-								closeChat={closeChat}
-								setHoveredChatIndex={setHoveredChatIndex}
-								hoveredChatIndex={hoveredChatIndex}
-								setChatBoxes={setChatBoxes}
-								chatBoxes={chatBoxes}
-							/>
+								xl={chat.isFullScreen ? "12" : "4"}
+								lg={chat.isFullScreen ? "12" : "6"}
+								md="12"
+								className={`px-0 chat-box-wrapper ${
+									!chat.isOpen || chat.isMinimized
+										? "removing"
+										: ""
+								}`}
+							>
+								<div
+									className={`chat-window ${
+										!chat.isOpen || chat.isMinimized
+											? "removing"
+											: ""
+									} ${
+										chat.isFullScreen ? "full-screen" : ""
+									}`}
+								>
+									<div className="chat-header d-flex justify-content-between align-items-center">
+										<span>{chat.name}</span>
+										<div>
+											<Button
+												variant="link"
+												onClick={() =>
+													toggleNavVisibility(index)
+												}
+											>
+												<FontAwesomeIcon
+													icon={faBars}
+												/>
+											</Button>
+											<Button
+												variant="link"
+												onClick={() =>
+													toggleMinimizeChat(index)
+												}
+											>
+												<FontAwesomeIcon
+													icon={faWindowMinimize}
+												/>
+											</Button>
+											<Button
+												variant="link"
+												onClick={() =>
+													toggleFullScreenChat(index)
+												}
+											>
+												<FontAwesomeIcon
+													icon={
+														chat.isFullScreen
+															? faCompress
+															: faExpand
+													}
+												/>
+											</Button>
+											<Button
+												variant="link"
+												onClick={() => closeChat(index)}
+											>
+												<FontAwesomeIcon
+													icon={faTimes}
+												/>
+											</Button>
+										</div>
+									</div>
+									{/* chat.isNavVisible */}
+									<div
+										className={`chat-nav d-flex justify-content-center align-items-center ${
+											chat.isNavVisible ? "" : "removing"
+										}`}
+									>
+										<Button
+											variant="link"
+											className="text-dark"
+										>
+											<FontAwesomeIcon icon={faEye} />
+										</Button>
+										<Button
+											variant="link"
+											className="text-dark"
+										>
+											<IconWithSlash
+												icon={faThumbtack}
+												slash={true}
+											/>
+										</Button>
+										<Button
+											variant="link"
+											className="text-dark"
+										>
+											<FontAwesomeIcon
+												icon={faBellSlash}
+											/>
+										</Button>
+										<Button
+											variant="link"
+											className="text-dark"
+										>
+											<FontAwesomeIcon
+												icon={faRightFromBracket}
+											/>
+										</Button>
+										<Button
+											variant="link"
+											className="text-dark"
+										>
+											<FontAwesomeIcon icon={faBan} />
+										</Button>
+									</div>
+									<div
+										className="chat-body"
+										style={{
+											height: chat.isNavVisible
+												? "calc(100% - 104px)"
+												: "calc(100% - 50px)",
+										}}
+									>
+										<Container className="chat-box">
+											<Row className="messages-row">
+												<Col>
+													<div className="messages">
+														{chat?.messages?.map(
+															(
+																message,
+																index
+															) => (
+																<div
+																	key={index}
+																	className={`message ${
+																		message.user ===
+																		"main"
+																			? "main-user"
+																			: "other-user"
+																	}`}
+																>
+																	{
+																		message.text
+																	}
+																	<div className="message-info">
+																		<span className="timestamp">
+																			{
+																				message.time
+																			}
+																		</span>
+																		{message.user ===
+																			"main" &&
+																			message.seen && (
+																				<FontAwesomeIcon
+																					icon={
+																						faCheck
+																					}
+																					className="seen-icon text-white"
+																				/>
+																			)}
+																	</div>
+																</div>
+															)
+														)}
+													</div>
+												</Col>
+											</Row>
+											<Row className="input-row">
+												<Col>
+													<Form.Control
+														type="text"
+														placeholder="Type a message..."
+													/>
+												</Col>
+												<Col xs="auto">
+													<Button>Send</Button>
+												</Col>
+											</Row>
+										</Container>
+									</div>
+								</div>
+							</Col>
 						))}
-					</Row>
-				</div>
+				</Row>
+			</div>
 
-				<div
-					className={`chat-bar ${
-						isSideNavVisible ? "with-nav" : "without-nav"
-					}`}
-				>
-					{chatBoxes.map((chat, index) => (
+			<div
+				className={`chat-bar ${
+					isSideNavVisible ? "with-nav" : "without-nav"
+				}`}
+			>
+				{chatItems
+					.sort((a, b) => b.order - a.order)
+					.map((chat, index) => (
 						<div
 							key={index}
-							className={`minimized-chat-item cursor-pointer pe-0 ${
+							className={`minimized-chat-item ${
+								!chat.isOpen ? "removing" : "cursor-pointer"
+							}  pe-0 ${
 								chat.isMinimized ? "" : "bg-primary text-white"
 							}`}
 							onClick={(e) => {
-								if (e.target.nodeName === "DIV")
-									chat.isMinimized
-										? openChat(chat.index, true)
-										: toggleMinimizeChat(index)
+								if (chat.isOpen && e.target.nodeName === "DIV")
+									toggleMinimizeChat(index)
 							}}
 						>
 							<div>{chat.name}</div>
@@ -504,15 +448,14 @@ const ChatList = () => {
 								className={`ms-2 me-0 ${
 									chat.isMinimized ? "" : "text-white"
 								}`}
-								onClick={() => closeChat(chat.index)}
+								onClick={() => closeChat(index)}
 							>
 								<FontAwesomeIcon icon={faTimes} />
 							</Button>
 						</div>
 					))}
-				</div>
 			</div>
-		</DndProvider>
+		</div>
 	)
 }
 

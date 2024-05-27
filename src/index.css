@@ -83,6 +83,7 @@ body {
 	padding: 10px;
 	overflow-y: auto;
 	height: calc(100% - 104px);
+	transition: all 0.5s ease;
 }
 
 .chat-box {
@@ -289,17 +290,8 @@ body {
 	margin: 10px;
 }
 
-.chat-window.full-screen {
-	width: calc(100% - 380px);
+.chat-window.full-screen:not(.removing) {
 	height: calc(100vh - 90px);
-	position: fixed;
-	top: 0;
-	left: 350px;
-	z-index: 1000;
-}
-.chat-box-container.without-nav .chat-window.full-screen {
-	width: calc(100vw - 30px);
-	left: 0;
 }
 
 .chat-window.dragging {
@@ -322,6 +314,9 @@ body {
 	background-color: #f8f9fa;
 	padding: 5px 10px;
 	border-bottom: 1px solid #ddd;
+	height: 50px;
+	transition: opacity 0.5s, height 0.25s !important;
+	opacity: 1;
 }
 
 .chat-nav button {
@@ -421,6 +416,8 @@ body {
 	margin-right: 10px;
 	padding: 5px 10px;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: all 0.3s ease !important;
+	width: 100px;
 }
 
 .minimized-chat-item .btn-link {
@@ -485,4 +482,18 @@ body {
 }
 .chat-window.removing {
 	height: 0px;
+}
+.minimized-chat-item.removing {
+	width: 0;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	transition: all 0.5s !important;
+}
+.chat-nav.removing {
+	height: 0;
+	overflow: hidden;
+	padding: 0;
+	transition: all 0.25s !important;
+	opacity: 0;
 }

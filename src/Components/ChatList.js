@@ -24,6 +24,7 @@ import {
 	faRightFromBracket,
 	faEye,
 } from "@fortawesome/free-solid-svg-icons"
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd"
 
 const ChatList = () => {
 	const IconWithSlash = ({ icon, slash }) => {
@@ -154,6 +155,21 @@ const ChatList = () => {
 		})
 	}
 
+	const onDragEnd = (result) => {
+		if (!result.destination) return
+
+		const updatedChatItems = Array.from(chatItems)
+		const [reorderedItem] = updatedChatItems.splice(result.source.index, 1)
+		updatedChatItems.splice(result.destination.index, 0, reorderedItem)
+		// Update the order based on the new index
+		const reorderedChatItems = updatedChatItems.map((item, index) => ({
+			...item,
+			order: chatItems.length - index - 1,
+		}))
+
+		setChatItems(reorderedChatItems)
+	}
+
 	return (
 		<div className="chat-app-container">
 			<Button
@@ -231,196 +247,270 @@ const ChatList = () => {
 				</ListGroup>
 			</div>
 
-			<div
-				className={`chat-box-container pb-5 ${
-					isSideNavVisible ? "with-nav" : "without-nav"
-				}`}
-			>
-				<Row className="chat-box-row px-2 pb-3 mx-0">
-					{chatItems
-						.sort((a, b) => b.order - a.order)
-						.map((chat, index) => (
-							<Col
-								key={index}
-								xl={chat.isFullScreen ? "12" : "4"}
-								lg={chat.isFullScreen ? "12" : "6"}
-								md="12"
-								className={`px-0 chat-box-wrapper ${
-									!chat.isOpen || chat.isMinimized
-										? "removing"
-										: ""
-								}`}
-							>
-								<div
-									className={`chat-window ${
-										!chat.isOpen || chat.isMinimized
-											? "removing"
-											: ""
-									} ${
-										chat.isFullScreen ? "full-screen" : ""
-									}`}
-								>
-									<div className="chat-header d-flex justify-content-between align-items-center">
-										<span>{chat.name}</span>
-										<div>
-											<Button
-												variant="link"
-												onClick={() =>
-													toggleNavVisibility(index)
-												}
-											>
-												<FontAwesomeIcon
-													icon={faBars}
-												/>
-											</Button>
-											<Button
-												variant="link"
-												onClick={() =>
-													toggleMinimizeChat(index)
-												}
-											>
-												<FontAwesomeIcon
-													icon={faWindowMinimize}
-												/>
-											</Button>
-											<Button
-												variant="link"
-												onClick={() =>
-													toggleFullScreenChat(index)
-												}
-											>
-												<FontAwesomeIcon
-													icon={
+			<DragDropContext onDragEnd={onDragEnd}>
+				<Droppable
+					droppableId="chatBoxContainer"
+					direction="horizontal"
+				>
+					{(provided) => (
+						<div
+							className={`chat-box-container pb-5 ${
+								isSideNavVisible ? "with-nav" : "without-nav"
+							}`}
+							{...provided.droppableProps}
+							ref={provided.innerRef}
+						>
+							<Row className="chat-box-row px-2 pb-3 mx-0">
+								{chatItems
+									.sort((a, b) => b.order - a.order)
+									.map((chat, index) => (
+										<Draggable
+											key={chat.name}
+											draggableId={chat.name}
+											index={index}
+										>
+											{(provided) => (
+												<Col
+													xl={
 														chat.isFullScreen
-															? faCompress
-															: faExpand
+															? "12"
+															: "4"
 													}
-												/>
-											</Button>
-											<Button
-												variant="link"
-												onClick={() => closeChat(index)}
-											>
-												<FontAwesomeIcon
-													icon={faTimes}
-												/>
-											</Button>
-										</div>
-									</div>
-									{/* chat.isNavVisible */}
-									<div
-										className={`chat-nav d-flex justify-content-center align-items-center ${
-											chat.isNavVisible ? "" : "removing"
-										}`}
-									>
-										<Button
-											variant="link"
-											className="text-dark"
-										>
-											<FontAwesomeIcon icon={faEye} />
-										</Button>
-										<Button
-											variant="link"
-											className="text-dark"
-										>
-											<IconWithSlash
-												icon={faThumbtack}
-												slash={true}
-											/>
-										</Button>
-										<Button
-											variant="link"
-											className="text-dark"
-										>
-											<FontAwesomeIcon
-												icon={faBellSlash}
-											/>
-										</Button>
-										<Button
-											variant="link"
-											className="text-dark"
-										>
-											<FontAwesomeIcon
-												icon={faRightFromBracket}
-											/>
-										</Button>
-										<Button
-											variant="link"
-											className="text-dark"
-										>
-											<FontAwesomeIcon icon={faBan} />
-										</Button>
-									</div>
-									<div
-										className="chat-body"
-										style={{
-											height: chat.isNavVisible
-												? "calc(100% - 104px)"
-												: "calc(100% - 50px)",
-										}}
-									>
-										<Container className="chat-box">
-											<Row className="messages-row">
-												<Col>
-													<div className="messages">
-														{chat?.messages?.map(
-															(
-																message,
-																index
-															) => (
-																<div
-																	key={index}
-																	className={`message ${
-																		message.user ===
-																		"main"
-																			? "main-user"
-																			: "other-user"
-																	}`}
-																>
-																	{
-																		message.text
+													lg={
+														chat.isFullScreen
+															? "12"
+															: "6"
+													}
+													md="12"
+													className={`px-0 chat-box-wrapper ${
+														!chat.isOpen ||
+														chat.isMinimized
+															? "removing"
+															: ""
+													}`}
+													ref={provided.innerRef}
+													{...provided.draggableProps}
+													{...provided.dragHandleProps}
+													style={{
+														...provided
+															.draggableProps
+															.style,
+														transitionDuration:
+															"0ms", // Disable animation
+													}}
+												>
+													<div
+														className={`chat-window ${
+															!chat.isOpen ||
+															chat.isMinimized
+																? "removing"
+																: ""
+														} ${
+															chat.isFullScreen
+																? "full-screen"
+																: ""
+														}`}
+													>
+														<div className="chat-header d-flex justify-content-between align-items-center">
+															<span>
+																{chat.name}
+															</span>
+															<div>
+																<Button
+																	variant="link"
+																	onClick={() =>
+																		toggleNavVisibility(
+																			index
+																		)
 																	}
-																	<div className="message-info">
-																		<span className="timestamp">
-																			{
-																				message.time
-																			}
-																		</span>
-																		{message.user ===
-																			"main" &&
-																			message.seen && (
-																				<FontAwesomeIcon
-																					icon={
-																						faCheck
-																					}
-																					className="seen-icon text-white"
-																				/>
+																>
+																	<FontAwesomeIcon
+																		icon={
+																			faBars
+																		}
+																	/>
+																</Button>
+																<Button
+																	variant="link"
+																	onClick={() =>
+																		toggleMinimizeChat(
+																			index
+																		)
+																	}
+																>
+																	<FontAwesomeIcon
+																		icon={
+																			faWindowMinimize
+																		}
+																	/>
+																</Button>
+																<Button
+																	variant="link"
+																	onClick={() =>
+																		toggleFullScreenChat(
+																			index
+																		)
+																	}
+																>
+																	<FontAwesomeIcon
+																		icon={
+																			chat.isFullScreen
+																				? faCompress
+																				: faExpand
+																		}
+																	/>
+																</Button>
+																<Button
+																	variant="link"
+																	onClick={() =>
+																		closeChat(
+																			index
+																		)
+																	}
+																>
+																	<FontAwesomeIcon
+																		icon={
+																			faTimes
+																		}
+																	/>
+																</Button>
+															</div>
+														</div>
+														<div
+															className={`chat-nav d-flex justify-content-center align-items-center ${
+																chat.isNavVisible
+																	? ""
+																	: "removing"
+															}`}
+														>
+															<Button
+																variant="link"
+																className="text-dark"
+															>
+																<FontAwesomeIcon
+																	icon={faEye}
+																/>
+															</Button>
+															<Button
+																variant="link"
+																className="text-dark"
+															>
+																<IconWithSlash
+																	icon={
+																		faThumbtack
+																	}
+																	slash={true}
+																/>
+															</Button>
+															<Button
+																variant="link"
+																className="text-dark"
+															>
+																<FontAwesomeIcon
+																	icon={
+																		faBellSlash
+																	}
+																/>
+															</Button>
+															<Button
+																variant="link"
+																className="text-dark"
+															>
+																<FontAwesomeIcon
+																	icon={
+																		faRightFromBracket
+																	}
+																/>
+															</Button>
+															<Button
+																variant="link"
+																className="text-dark"
+															>
+																<FontAwesomeIcon
+																	icon={faBan}
+																/>
+															</Button>
+														</div>
+														<div
+															className="chat-body"
+															style={{
+																height: chat.isNavVisible
+																	? "calc(100% - 104px)"
+																	: "calc(100% - 50px)",
+															}}
+														>
+															<Container className="chat-box">
+																<Row className="messages-row">
+																	<Col>
+																		<div className="messages">
+																			{chat?.messages?.map(
+																				(
+																					message,
+																					index
+																				) => (
+																					<div
+																						key={
+																							index
+																						}
+																						className={`message ${
+																							message.user ===
+																							"main"
+																								? "main-user"
+																								: "other-user"
+																						}`}
+																					>
+																						{
+																							message.text
+																						}
+																						<div className="message-info">
+																							<span className="timestamp">
+																								{
+																									message.time
+																								}
+																							</span>
+																							{message.user ===
+																								"main" &&
+																								message.seen && (
+																									<FontAwesomeIcon
+																										icon={
+																											faCheck
+																										}
+																										className="seen-icon text-white"
+																									/>
+																								)}
+																						</div>
+																					</div>
+																				)
 																			)}
-																	</div>
-																</div>
-															)
-														)}
+																		</div>
+																	</Col>
+																</Row>
+																<Row className="input-row">
+																	<Col>
+																		<Form.Control
+																			type="text"
+																			placeholder="Type a message..."
+																		/>
+																	</Col>
+																	<Col xs="auto">
+																		<Button>
+																			Send
+																		</Button>
+																	</Col>
+																</Row>
+															</Container>
+														</div>
 													</div>
 												</Col>
-											</Row>
-											<Row className="input-row">
-												<Col>
-													<Form.Control
-														type="text"
-														placeholder="Type a message..."
-													/>
-												</Col>
-												<Col xs="auto">
-													<Button>Send</Button>
-												</Col>
-											</Row>
-										</Container>
-									</div>
-								</div>
-							</Col>
-						))}
-				</Row>
-			</div>
+											)}
+										</Draggable>
+									))}
+								{provided.placeholder}
+							</Row>
+						</div>
+					)}
+				</Droppable>
+			</DragDropContext>
 
 			<div
 				className={`chat-bar ${
